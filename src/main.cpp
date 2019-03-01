@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <SSD1306Wire.h>
 #include <pins_arduino.h>
+#include "images.h"
 
 // Pin mappings for the LoRA radio/library
 const lmic_pinmap lmic_pins = {
@@ -49,6 +50,7 @@ SSD1306Wire display(0x3c, OLED_SDA, OLED_SCL);
 
 // Forward method declaration
 void do_send(osjob_t *j);
+void showLogo();
 
 void onEvent(ev_t ev) {
     Serial.print(os_getTime());
@@ -174,19 +176,36 @@ void setup() {
     Serial.begin(115200);
     while (!Serial);
 
+    Serial.println();
     Serial.println("LoraWAN Node...");
 
     // Configure built-in LED -- will illuminate when sending
     pinMode(LED_BUILTIN, OUTPUT);
 
+    // Configure OLED by setting the OLED Reset HIGH, LOW, and then back HIGH
     pinMode(OLED_RST, OUTPUT);
-    digitalWrite(OLED_RST, LOW); // set GPIO16 low to reset OLED
+    digitalWrite(OLED_RST, LOW);
     delay(50);
     digitalWrite(OLED_RST, HIGH);
     display.init();
     display.flipScreenVertically();
 
-    // LMIC init
+    // LoRa image
+    showLogo();
+    delay(2000);
+
+    // Indicate which function this device is running
+    display.clear();
+    display.setFont(ArialMT_Plain_16);
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    int centerWidth = display.getWidth() / 2;
+    int centerHeight = display.getHeight() / 2;
+    display.drawString(centerWidth, 0, "LoRa");
+    display.drawString(centerWidth, centerHeight, "Node (transmitter)");
+    display.display();
+    delay(2000);
+
+    // LMIC init (LoRaWAN)
     os_init();
 
     // Reset the MAC state. Session and pending data transfers will be
@@ -229,4 +248,13 @@ void setup() {
 void loop() {
     // Make sure LMIC is ran too
     os_runloop_once();
+}
+
+void showLogo() {
+  uint8_t x_off = (display.getWidth() - logo_width) / 2;
+  uint8_t y_off = (display.getHeight() - logo_height) / 2;
+
+  display.clear();
+  display.drawXbm(x_off, y_off, logo_width, logo_height, logo_bits);
+  display.display();
 }
