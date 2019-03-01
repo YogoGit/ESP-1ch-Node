@@ -91,7 +91,7 @@ void onEvent(ev_t ev) {
 
     case EV_TXCOMPLETE:
         // Turn off LED after send is complete
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, LOW);
 
         Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
         if (LMIC.txrxFlags & TXRX_ACK)
@@ -146,8 +146,10 @@ void do_send(osjob_t *j) {
         Serial.println(F("OP_TXRXPEND, not sending"));
     } else if (!(LMIC.opmode & OP_TXRXPEND)) {
         // Turn on LED to indicate we're sending data.
-        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED_BUILTIN, HIGH);
 
+        display.clear();
+        display.setFont(ArialMT_Plain_10);
         display.drawString(0, 0, "Sending packet: ");
         display.drawString(90, 0, String(counter, DEC));
         display.display();
@@ -179,7 +181,7 @@ void setup() {
     delay(50);
     digitalWrite(16, HIGH);
     display.init();
-    display.setFont(ArialMT_Plain_10);
+    display.flipScreenVertically();
 
     // LMIC init
     os_init();
