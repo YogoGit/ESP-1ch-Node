@@ -2,14 +2,15 @@
 #include <hal/hal.h>
 #include <SPI.h>
 #include <Wire.h>
-#include "SSD1306.h"
+#include <SSD1306Wire.h>
+#include <pins_arduino.h>
 
 // Pin mappings for the LoRA radio/library
 const lmic_pinmap lmic_pins = {
-    .nss = 18,
+    .nss =  LORA_CS,
     .rxtx = LMIC_UNUSED_PIN,
-    .rst = 14,
-    .dio = {/* dio0 */ 26, /* dio1 */ 33, /* dio2 */ 32},
+    .rst = LORA_RST,
+    .dio = {LORA_IRQ, /* dio1 */ 33, /* dio2 */ 32},
 };
 
 // These callbacks are only used in over-the-air activation, so they are
@@ -44,7 +45,7 @@ static osjob_t sendjob;
 // longer due to duty cycle limitations).  we set 10 seconds interval
 const unsigned TX_INTERVAL = 10;
 
-SSD1306 display(0x3c, 4, 15);
+SSD1306Wire display(0x3c, OLED_SDA, OLED_SCL);
 
 // Forward method declaration
 void do_send(osjob_t *j);
@@ -171,15 +172,17 @@ void do_send(osjob_t *j) {
 
 void setup() {
     Serial.begin(115200);
-    Serial.printf("Starting...\r\n");
+    while (!Serial);
+
+    Serial.println("LoraWAN Node...");
 
     // Configure built-in LED -- will illuminate when sending
     pinMode(LED_BUILTIN, OUTPUT);
 
-    pinMode(16, OUTPUT);
-    digitalWrite(16, LOW); // set GPIO16 low to reset OLED
+    pinMode(OLED_RST, OUTPUT);
+    digitalWrite(OLED_RST, LOW); // set GPIO16 low to reset OLED
     delay(50);
-    digitalWrite(16, HIGH);
+    digitalWrite(OLED_RST, HIGH);
     display.init();
     display.flipScreenVertically();
 
@@ -197,7 +200,7 @@ void setup() {
     uint8_t nwkskey[sizeof(NWKSKEY)];
     memcpy_P(appskey, APPSKEY, sizeof(APPSKEY));
     memcpy_P(nwkskey, NWKSKEY, sizeof(NWKSKEY));
-    LMIC_setSession (0x1, DEVADDR, nwkskey, appskey);
+    LMIC_setSession(0x1, DEVADDR, nwkskey, appskey);
 
     // Disable all 72 channels used by TTN
     for (int c = 0; c < 72; c++) {
